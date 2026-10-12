@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aiovl"
-version = "0.0.1.dev0"
+version = "0.0.1.dev1"
 description = "Experimental asynchronous VLook cloud-bot client and dispatcher"
 readme = "README.md"
 requires-python = ">=3.10"

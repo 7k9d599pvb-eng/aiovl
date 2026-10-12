@@ -1,7 +1,7 @@
 # aiovl
 
 Experimental asynchronous Python SDK for VLook cloud bots. Python 3.10+, no
-third-party runtime dependencies. The current SDK version is `0.0.1.dev0`.
+third-party runtime dependencies. The current SDK version is `0.0.1.dev1`.
 This repository is the standalone SDK; it does not contain the VLook app or
 server. It is not a drop-in aiogram fork or a Telegram Bot API client.
 
@@ -32,12 +32,11 @@ input. The small runnable example is [examples/echo.py](examples/echo.py).
 1. In VLook Settings, enable developer mode and wait for the save to finish.
 2. Open the built-in VLook BotFather (`@vlook_botfather_bot`). Send `/newbot`,
    enter the display name and username, then explicitly confirm creation.
-3. Save the issued bot token in your process's secret configuration. Use
-   **Скопировать ID для SDK** to obtain the public `botId`. The `@username`
-   search handle is not the SDK ID.
-4. Configure `VLOOK_BOT_ID`, `VLOOK_BOT_TOKEN`, and `VLOOK_BOT_API_ORIGIN` for
-   `examples/echo.py`, or pass them directly to your own application in memory.
-   The current primary origin is `https://89.124.86.75`.
+3. Save the issued bot token in your process's secret configuration.
+   No public bot ID is required for new SDK code.
+4. Configure only `VLOOK_BOT_TOKEN` in protected process configuration for
+   `examples/echo.py`. `Bot(token)` uses the current primary origin
+   `https://89.124.86.75`; an explicit HTTPS `base_url` override remains available.
 5. A user finds the bot by `@username`, opens its private bot chat and sends a
    message such as `/start`. Opening the chat does not send `/start` itself.
 
@@ -54,23 +53,67 @@ management flow. Earlier hash-only bot records may require an explicit rotation
 to issue a recoverable token. Rotate or revoke only after confirmation.
 
 Do not print tokens, private updates or attachment bytes, or put credentials in
-URLs, source files or version control. Explicitly set `base_url`: the default
-`https://cloud.vlook.invalid` is an unusable placeholder. HTTPS origin validation,
-TLS verification and redirect rejection remain enabled. The SDK sends tokens in
+URLs, source files or version control. HTTPS origin validation, TLS verification
+and redirect rejection remain enabled. There is no host fallback. The SDK sends tokens in
 the Authorization header. It does not automatically load `.env` files.
+
+## Quick start: only the bot token
+
+```python
+import asyncio
+import os
+from aiovl import Bot, Dispatcher, Router
+
+async def main():
+    bot = Bot(os.environ["VLOOK_BOT_TOKEN"])
+    router = Router()
+
+    @router.on_command("/start")
+    async def start(update):
+        await bot.send_message(update["chat"], "Hello from VLook!",
+                               request_id="start:" + update["updateId"])
+
+    await Dispatcher(bot, router=router, acknowledge=True,
+                     retry_transport=True).run_polling()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+The first token-only operation authenticates through `POST /v1/cloud-bots/getMe`.
+It requires a gateway implementing that endpoint. The SDK strictly accepts only
+`{version:1, botId:"bot_…"}` and shares overlapping discovery requests. Only the
+public ID is cached; every later operation still authenticates the bearer token.
+`await bot.get_me()` performs a fresh auth check and rejects a changed identity.
+No owner account token, listing API or copied ID is needed.
+
+On 12 October 2026, a bounded token-only SDK probe passed all 12 checks against
+the primary HTTPS API: registration, create/repeated reveal, owner-password
+isolation, stable upload retry, attachment isolation, token-only identity,
+media dispatch/download/reply, authenticated profile photo roundtrip, real
+restart persistence, commands/callbacks with acknowledgement, encrypted backup
+restore, and explicit token rotation/revocation. Both QA accounts were verified
+deactivated and the bot revoked afterward. This is specific integration evidence,
+not a guarantee of service availability, complete client UI or independent audit.
+
+Legacy explicit calls such as `send_message(bot_id, chat, text, request_id=...)`
+and `Dispatcher(bot, bot_id, router)` remain supported and do not require
+discovery on an older gateway. Method objects retain their old positional order;
+new code uses named fields and omits `bot_id`.
 
 ## Supported Python API
 
 | API | Current purpose |
 | --- | --- |
-| `Bot.send_message(bot_id, chat, text, request_id=..., reply_markup=...)` | Private text, up to 4096 characters; optional bounded VLook keyboards. |
-| `Bot.get_updates(bot_id, offset=..., limit=100, timeout=0, include_attachments=False)` | Read ordered updates after the exclusive offset; at most 100 per batch. |
-| `Bot.acknowledge_updates(bot_id, through)` | Acknowledge a completed prefix separately from polling. |
-| `Bot.answer_callback_query(bot_id, callback_query_id, request_id=...)` | Answer a callback; use a stable caller-provided request ID. |
-| `Bot.send_photo(bot_id, chat, photo, request_id=..., file_name=..., caption=...)` | Send prepared JPEG/PNG bytes or a bounded local file path. |
-| `Bot.send_document(bot_id, chat, document, request_id=..., file_name=..., caption=...)` | Send a PDF; arbitrary file formats are unsupported. |
-| `Bot.get_attachment(bot_id, chat, file_id)` | Retrieve bytes and validate the descriptor, requested ID, size, SHA-256 and type signature. |
-| `SendMessage`, `GetUpdates`, `AcknowledgeUpdates`, `AnswerCallbackQuery`, `SendPhoto`, `SendDocument`, `GetAttachment` | Method objects with `await method.execute(bot)`. |
+| `Bot.get_me()` | Authenticate the token and obtain its public bot ID, without profile data. |
+| `Bot.send_message(chat, text, request_id=..., reply_markup=...)` | Private text, up to 4096 characters; optional bounded VLook keyboards. |
+| `Bot.get_updates(offset=..., limit=100, timeout=0, include_attachments=False)` | Read ordered updates after the exclusive offset; at most 100 per batch. |
+| `Bot.acknowledge_updates(through)` | Acknowledge a completed prefix separately from polling. |
+| `Bot.answer_callback_query(callback_query_id, request_id=...)` | Answer a callback; use a stable caller-provided request ID. |
+| `Bot.send_photo(chat, photo, request_id=..., file_name=..., caption=...)` | Send prepared JPEG/PNG bytes or a bounded local file path. |
+| `Bot.send_document(chat, document, request_id=..., file_name=..., caption=...)` | Send a PDF; arbitrary file formats are unsupported. |
+| `Bot.get_attachment(chat, file_id)` | Retrieve bytes and validate the descriptor, requested ID, size, SHA-256 and type signature. |
+| `GetMe`, `SendMessage`, `GetUpdates`, `AcknowledgeUpdates`, `AnswerCallbackQuery`, `SendPhoto`, `SendDocument`, `GetAttachment` | Method objects with `await method.execute(bot)`. |
 | `Router.on_command`, `on_text`, `on_callback`, `on_photo`, `on_document`, `on_attachment` | Ordered, first-match handlers. |
 | `Dispatcher.poll_once`, `run_polling`, `stop` | Ordered polling and cancellation; optional acknowledgement, transport retry and attachment capability. |
 
@@ -79,10 +122,11 @@ room ID or another user's chat ID. The SDK has no owner registration methods,
 webhook server, group bot support, payments, web apps, voice/video media, or
 full Telegram/aiogram compatibility.
 
-Media methods are implemented and covered by standalone synthetic SDK tests.
-That does not establish a completed live media flow in every VLook client.
-In particular, the delivered native53 excludes the unfinished native bot-media
-layer. Server and client media support must be verified for your workflow before
+Media methods have standalone synthetic SDK coverage and passed the bounded
+SDK-to-primary-HTTPS upload/download/reply probe on 12 October 2026.
+That does not establish a completed media flow in every VLook client.
+Native53/54 do not implement the user-facing bot-media UI. Client support must
+be verified for your workflow before
 enabling `include_attachments=True`; its default is `False`.
 
 Photos are JPEG/PNG, documents are PDF, each 1 byte–10 MiB. Photo descriptors
@@ -117,7 +161,7 @@ back to a text handler when no matching attachment handler exists.
 Use `timeout=0`: the current server contract does not provide nonzero long
 polling. Dispatcher waits two seconds after an empty batch. `acknowledge=True`
 and `retry_transport=True` are optional and off by default. The example enables
-both. Retryable reads/acknowledgements get at most five retries after the first
+both. Retryable discovery/reads/acknowledgements get at most five retries after the first
 attempt, with waits of 2, 4, 8, 16 and 30 seconds. `stop()` interrupts backoff.
 Handlers and their arbitrary side effects are never automatically retried as
 transport operations.
@@ -127,8 +171,22 @@ A crash after an effect and before acknowledgement can replay an update.
 Deduplicate effects durably by `updateId` and reuse the same request ID for a
 send/callback retry, including after process restart. SDK cursor and pending
 acknowledgement are in memory. Request deduplication has bounded retention.
+Cancellation, `stop()` or a timeout does not prove that an already submitted
+write was rolled back. Retry an uncertain send/callback with the same stable
+request ID and unchanged parameters; external effects need their own durable
+idempotency key.
 After an uncertain creation/rotation response, inspect BotFather before
 repeating a mutation; do not blindly create another bot or rotate again.
+
+## Migrating a Telegram / aiogram bot
+
+The [migration section](docs/developer-guide-ru.md#11-перенос-telegram--aiogram-3--aiovl)
+maps commands, first-match routers, private chat dictionaries, keyboards,
+callback answers, polling/acknowledgement and JPEG/PNG/PDF methods. Telegram
+tokens, numeric chat IDs, file IDs and markup objects cannot be reused. Group,
+webhook, payment, web app, edit/delete/forward and full aiogram framework features
+are unsupported. Port the supported business logic and test it before live use;
+this is not an automatic import replacement or a general-availability promise.
 
 ## Standalone tests
 
