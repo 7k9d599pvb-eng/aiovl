@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aiovl"
+version = "0.0.1.dev0"
+description = "Experimental asynchronous VLook cloud-bot client and dispatcher"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE", "NOTICE.md"]
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/7k9d599pvb-eng/aiovl"
+
+[tool.setuptools]
+packages = ["aiovl"]
+include-package-data = false
+
+[tool.setuptools.package-data]
+aiovl = ["UPSTREAM.json"]
