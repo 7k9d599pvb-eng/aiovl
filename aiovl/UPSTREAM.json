@@ -1,0 +1,26 @@
+{
+  "project": "aiogram",
+  "candidate_release": "v3.31.0",
+  "commit": "97cfe79fa0ac9459d498bdb15cb7cb0530dbaac7",
+  "commit_url": "https://github.com/aiogram/aiogram/commit/97cfe79fa0ac9459d498bdb15cb7cb0530dbaac7",
+  "release_url": "https://github.com/aiogram/aiogram/releases/tag/v3.31.0",
+  "source_archive_sha256": "e7a04ee0064b57191963eeb47256e481b5bea1e22d0f935a5e94706f89f08eef",
+  "source_archive_url": "https://github.com/aiogram/aiogram/archive/97cfe79fa0ac9459d498bdb15cb7cb0530dbaac7.tar.gz",
+  "status": "attributed-reference-no-upstream-runtime",
+  "runtime_importable": false,
+  "runtime_connected": false,
+  "notes": [
+    "The active SDK transport and bounded VLook API adaptation are included in this repository.",
+    "The pinned aiogram snapshot was reviewed separately and is not shipped or imported here.",
+    "The existing upstream copyright notices and complete MIT license are preserved."
+  ],
+  "reviewed_reference_files": [
+    "aiogram/client/session/base.py",
+    "aiogram/client/session/aiohttp.py",
+    "aiogram/client/bot.py",
+    "aiogram/methods/base.py",
+    "aiogram/methods/send_message.py",
+    "aiogram/methods/get_updates.py"
+  ],
+  "upstream_source_files_shipped": []
+}
