@@ -50,7 +50,7 @@ class TokenOnlyTests(unittest.IsolatedAsyncioTestCase):
         with patch("aiovl.client._https_transport", transport):
             await Bot(secrets.token_hex(24)).get_me()
             await Bot(secrets.token_hex(24), base_url="https://example.invalid").get_me()
-        self.assertEqual(seen, [("https://89.124.86.75", "/v1/cloud-bots/getMe"),
+        self.assertEqual(seen, [("https://api.vlookme.com", "/v1/cloud-bots/getMe"),
                                 ("https://example.invalid", "/v1/cloud-bots/getMe")])
 
     async def test_legacy_explicit_calls_do_not_require_new_endpoint(self):

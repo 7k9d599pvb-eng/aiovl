@@ -273,7 +273,7 @@ async def _https_transport(base_url: str, token: str, method: str, path: str, he
 class Bot:
     """Experimental VLook cloud-bot client, intentionally not aiogram-compatible."""
 
-    def __init__(self, token: str, *, transport: AsyncTransport | None = None, base_url: str = "https://89.124.86.75") -> None:
+    def __init__(self, token: str, *, transport: AsyncTransport | None = None, base_url: str = "https://api.vlookme.com") -> None:
         if not isinstance(token, str) or len(token) < 16 or len(token) > 512 or not re.fullmatch(r"[A-Za-z0-9._~-]+", token):
             _fail("Invalid cloud bot token.")
         try:

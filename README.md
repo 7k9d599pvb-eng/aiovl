@@ -1,7 +1,7 @@
 # aiovl
 
 Experimental asynchronous Python SDK for VLook cloud bots. Python 3.10+, no
-third-party runtime dependencies. The current SDK version is `0.0.1.dev1`.
+third-party runtime dependencies. The current SDK version is `0.0.1.dev2`.
 This repository is the standalone SDK; it does not contain the VLook app or
 server. It is not a drop-in aiogram fork or a Telegram Bot API client.
 
@@ -27,6 +27,16 @@ reviewed Git commit instead of installing a moving branch.
 keyboards, callbacks, media, acknowledgement, and an example using hidden token
 input. The small runnable example is [examples/echo.py](examples/echo.py).
 
+## Update to the domain default
+
+Version `0.0.1.dev2` connects `Bot(token)` to `https://api.vlookme.com`
+automatically. Update your existing SDK checkout with `git pull --ff-only`,
+then reinstall it with `python -m pip install --upgrade .` in the bot's virtual
+environment and restart the bot process. Existing bot tokens remain valid.
+If your code explicitly sets the old IP as `base_url`, remove that override
+to use the default, or replace it with the domain. HTTPS certificate checking
+and redirect rejection remain enabled; there is no automatic IP fallback.
+
 ## Configure a bot
 
 1. In VLook Settings, enable developer mode and wait for the save to finish.
@@ -36,7 +46,7 @@ input. The small runnable example is [examples/echo.py](examples/echo.py).
    No public bot ID is required for new SDK code.
 4. Configure only `VLOOK_BOT_TOKEN` in protected process configuration for
    `examples/echo.py`. `Bot(token)` uses the current primary origin
-   `https://89.124.86.75`; an explicit HTTPS `base_url` override remains available.
+   `https://api.vlookme.com`; an explicit HTTPS `base_url` override remains available.
 5. A user finds the bot by `@username`, opens its private bot chat and sends a
    message such as `/start`. Opening the chat does not send `/start` itself.
 
